@@ -1,0 +1,12 @@
+name: gateway-enrich
+version: "1.0.0"
+description: >-
+  Stamps inbound Discord thread messages with a `[thread: <name>]` line via the
+  pre_gateway_dispatch hook, so agents see the thread name directly in message
+  text without a channel-info lookup. Reads the name from the event itself —
+  no network, no credentials, fail-open.
+author: Superuser-HQ
+hooks:
+  - pre_gateway_dispatch
+provides_hooks:
+  - pre_gateway_dispatch
