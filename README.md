@@ -69,3 +69,7 @@ and commands are unaffected.
 ## License
 
 MIT — see [LICENSE](LICENSE).
+
+## Maintainer docs
+
+- [Dogfood loop: repo → live instance](docs/dogfood-runbook.md) — update, restart, and verify a live instance against merged `main`.
