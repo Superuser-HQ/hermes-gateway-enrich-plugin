@@ -148,12 +148,12 @@ def main():
     # Stamp line (first line) must be a single line — no embedded newline.
     if out_i is not None:
         stamp_line_i = out_i["text"].split("\n", 1)[0]
+        check(
+            "(i) stamp line is a single line",
+            "\n" not in stamp_line_i and "\r" not in stamp_line_i,
+        )
     else:
-        stamp_line_i = ""
-    check(
-        "(i) stamp line is a single line",
-        "\n" not in stamp_line_i and "\r" not in stamp_line_i,
-    )
+        check("(i) stamp line check skipped — callback returned None (prior check already failed)", False)
 
     # (j) channel.name all control chars, chat_name empty → fail-open None.
     chan_j = types.SimpleNamespace(name="\n\r", parent_id="p2", id="t2")
@@ -175,12 +175,12 @@ def main():
     # Stamp line (first line) must contain no control chars at all.
     if out_k is not None:
         stamp_line_k = out_k["text"].split("\n", 1)[0]
+        check(
+            "(k) stamp line has no C0/DEL/C1 control chars",
+            all(ord(c) >= 0x20 and not 0x7f <= ord(c) <= 0x9f for c in stamp_line_k),
+        )
     else:
-        stamp_line_k = ""
-    check(
-        "(k) stamp line has no C0/DEL/C1 control chars",
-        all(ord(c) >= 0x20 and not 0x7f <= ord(c) <= 0x9f for c in stamp_line_k),
-    )
+        check("(k) stamp line check skipped — callback returned None (prior check already failed)", False)
 
     # Summary.
     failed = [r for r in results if not r[1]]
