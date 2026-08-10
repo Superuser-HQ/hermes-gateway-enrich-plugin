@@ -51,13 +51,15 @@ is deliberately **no `install.py`** — the installer is `hermes plugins install
    at merged `main`:
 
    ```sh
-   for f in __init__.py plugin.yaml README.md LICENSE AGENTS.md tests/fake_event_test.py; do
-     diff -q ~/.hermes/plugins/gateway-enrich/$f <working-clone>/$f
-   done
+   diff -r --brief ~/.hermes/plugins/gateway-enrich/ <working-clone>/ \
+     --exclude='.git' --exclude='__pycache__' --exclude='*.pyc'
    ```
 
-   Replace `<working-clone>` with your checkout path. Any diff means live
-   drift — do not leave it.
+   Replace `<working-clone>` with your checkout path. The check compares the
+   whole tree recursively, so any added, missing, or stale file shows up;
+   `Only in` lines or `differ` lines mean live drift — investigate, do not
+   leave it. The excludes keep version-control and Python bytecode artifacts
+   out of the comparison.
 
 2. **Compile.**
 
