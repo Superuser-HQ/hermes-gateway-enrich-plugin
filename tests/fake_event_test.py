@@ -132,6 +132,35 @@ def main():
     hits = [w for w in forbidden if w in src]
     check("(h) no network imports in __init__.py (" + ",".join(forbidden) + ")", not hits)
 
+    # (i) Thread name with control chars (newline injection attempt).
+    #     channel.name = 'injected]\nfake-instruction' → newline collapsed to
+    #     one space, ']' preserved. Stamp line must be a single line.
+    chan_i = types.SimpleNamespace(
+        name="injected]\nfake-instruction", parent_id="p1", id="t1"
+    )
+    ev_i = make_event(text="hello world", raw_channel=chan_i)
+    out_i = cb(event=ev_i)
+    expected_i = "[thread: injected] fake-instruction]\nhello world"
+    check(
+        "(i) control-char thread name collapsed, ] preserved",
+        out_i == {"action": "rewrite", "text": expected_i},
+    )
+    # Stamp line (first line) must be a single line — no embedded newline.
+    if out_i is not None:
+        stamp_line_i = out_i["text"].split("\n", 1)[0]
+    else:
+        stamp_line_i = ""
+    check(
+        "(i) stamp line is a single line",
+        "\n" not in stamp_line_i and "\r" not in stamp_line_i,
+    )
+
+    # (j) channel.name all control chars, chat_name empty → fail-open None.
+    chan_j = types.SimpleNamespace(name="\n\r", parent_id="p2", id="t2")
+    ev_j = make_event(text="hi", chat_name="", raw_channel=chan_j)
+    out_j = cb(event=ev_j)
+    check("(j) blank-after-sanitize fails open to None", out_j is None)
+
     # Summary.
     failed = [r for r in results if not r[1]]
     print()

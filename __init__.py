@@ -38,9 +38,15 @@ DESIGN RULES
     whose stripped form starts with ``/`` is passed through unchanged.
   - **Only Discord threads.** Platform and chat_type are gated first; every
     other message shape is a fast ``None``.
+  - **Sanitized name.** Control characters in the platform-provided thread
+    name are collapsed to single spaces so a crafted name can't break out of
+    the stamp line; ``]`` is preserved deliberately — the vector was the
+    newline, and the stamp is human-readable, not machine-parsed.
 
 Python 3.11 compatible.
 """
+
+import re
 
 __version__ = "1.0.0"
 
@@ -83,6 +89,7 @@ def _pre_gateway_dispatch(event=None, gateway=None, session_store=None, **kwargs
             return None
 
         name = _resolve_thread_name(event, source)
+        name = _sanitize_name(name)
         if not name:
             return None
 
@@ -131,3 +138,21 @@ def _resolve_thread_name(event, source):
             return tail
 
     return None
+
+
+def _sanitize_name(name):
+    """Collapse C0 control chars in a thread name to single spaces.
+
+    A platform-provided thread name containing control characters (notably
+    newlines) could break out of the single ``[thread: <name>]`` stamp line
+    and inject name-controlled text into the message body. This collapses any
+    run of C0 control chars (``\\x00``-``\\x1f``, which includes ``\\r`` and
+    ``\\n``) to a single space, then strips leading/trailing whitespace.
+
+    Returns the sanitized string, or ``None`` if the result is empty/blank
+    (so the caller's fail-open ``if not name`` path engages).
+    """
+    if not name:
+        return None
+    cleaned = re.sub(r"[\x00-\x1f]+", " ", name).strip()
+    return cleaned if cleaned else None
