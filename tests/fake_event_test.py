@@ -161,6 +161,27 @@ def main():
     out_j = cb(event=ev_j)
     check("(j) blank-after-sanitize fails open to None", out_j is None)
 
+    # (k) DEL and C1 control chars in thread name are collapsed/stripped.
+    #     channel.name = 'bad\x7fname\x9b' → DEL collapses to a space between
+    #     words; trailing CSI char collapses then strips.
+    chan_k = types.SimpleNamespace(name="bad\x7fname\x9b", parent_id="p3", id="t3")
+    ev_k = make_event(text="hello world", raw_channel=chan_k)
+    out_k = cb(event=ev_k)
+    expected_k = "[thread: bad name]\nhello world"
+    check(
+        "(k) DEL+C1 thread name collapsed to spaces",
+        out_k == {"action": "rewrite", "text": expected_k},
+    )
+    # Stamp line (first line) must contain no control chars at all.
+    if out_k is not None:
+        stamp_line_k = out_k["text"].split("\n", 1)[0]
+    else:
+        stamp_line_k = ""
+    check(
+        "(k) stamp line has no C0/DEL/C1 control chars",
+        all(ord(c) >= 0x20 and not 0x7f <= ord(c) <= 0x9f for c in stamp_line_k),
+    )
+
     # Summary.
     failed = [r for r in results if not r[1]]
     print()
